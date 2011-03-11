@@ -8,8 +8,10 @@ monkey.patch_all()
 
 def main(args=None):
     if args is None:
-        args = sys.argv
-    pkg, ep = args[1].split(':')
+        args = list(sys.argv)
+    spec = args.pop(1)
+    sys.argv = args
+    pkg, ep = spec.split(':')
 
     script = load_entry_point(pkg, 'console_scripts', ep)
     return script()

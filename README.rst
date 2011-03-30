@@ -5,14 +5,14 @@
 Provides some helpers for working with gevent
 
 
-gmp
+gex
 ===
 
-**g.event m.onkey p.atch {runner}**
+**green execute**
 
 Allows for the running of python script with the gevent monkeypatches::
 
-  $ gmp nose:nosetests {normal flags for the script}
+  $ gex nose:nosetests {normal flags for the script}
 
 
 

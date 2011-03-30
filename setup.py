@@ -20,7 +20,7 @@ setup(name='GeventUtil',
       install_requires=["gevent"],
       entry_points="""
       [console_scripts]
-      gmp=geventutil.script:main
+      gex=geventutil.script:main
       
       [paste.server_factory]
       gevent=monkeylib.servers:gevent_factory

@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
-import sys, os
+from setuptools import setup
+from setuptools import find_packages
 
-version = '0.1'
+version = '0.1.1'
 
 setup(name='GeventUtil',
       version=version,
@@ -24,5 +24,6 @@ setup(name='GeventUtil',
       
       [paste.server_factory]
       gevent=monkeylib.servers:gevent_factory
+      main=monkeylib.servers:gevent_factory
       """,
       )

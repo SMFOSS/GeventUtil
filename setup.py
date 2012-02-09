@@ -1,19 +1,14 @@
-<<<<<<< HEAD
-from setuptools import setup, find_packages
-
-=======
 from setuptools import setup
 from setuptools import find_packages
->>>>>>> sm/master
+
 
 version = '0.1.1'
 
 setup(name='GeventUtil',
       version=version,
       description="Some helper for working with gevent",
-      long_description="""
-      """,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+      long_description=open('README.rst').read(),
+      classifiers=[], 
       keywords='gevent monkeypatch',
       author='whit',
       author_email='whit at surveymonkey.com',

@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-import sys, os
+
 
 version = '0.1'
 
@@ -17,12 +17,14 @@ setup(name='GeventUtil',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=["gevent"],
+      install_requires=["gevent", "gservice", "PasteDeploy"],
       entry_points="""
       [console_scripts]
       gex=geventutil.script:main
       
       [paste.server_factory]
-      gevent=monkeylib.servers:gevent_factory
+      gevent=geventutil.servers:gevent_factory
+      gsf=geventutil.servers:GeventServerFactory
+      gspot=geventutil.service:GSpot
       """,
       )

@@ -1,7 +1,7 @@
 from gevent import monkey
 monkey.patch_all()
 
-from contextlib import context_manager as cm
+from contextlib import contextmanager as cm
 from gevent import wsgi
 from paste.deploy.converters import asbool
 from webob import Response

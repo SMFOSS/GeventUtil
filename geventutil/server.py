@@ -67,13 +67,14 @@ class GeventServerFactory(object):
     def __call__(self, app):
         with self.run(app):
             name = self.app_name(app)
-            arguments = "\n".join(["|  %s: %s" % keyval \
-                                       for keyval in self.original_args.items()])
-            msg = "PID %s serving '%s' at %s:%s w/ additional args:\n%s"\
-                %(pid, name, self.host, self.port, arguments)
-            rule = "---"
-            print
-            print rule
+            arguments = None
+            if len(self.original_args):
+                arguments = "\n".join(["|  %s: %s" % keyval \
+                                           for keyval in self.original_args.items()])
+            msg = "Serving '%s' at %s:%s" %(name, self.host, self.port)
+            if not arguments is None: 
+                msg = msg + "w/ additional args:\n%s" %arguments
+            rule = "------"
             print msg.strip()
             print rule
 

@@ -65,7 +65,7 @@ class GeventServerFactory(object):
         with self.run(app):
             name = self.app_name(app)
             arguments = "\n".join(["|  %s: %s" % keyval for keyval in self.original_args.items()])
-            print "Serving %s at %s:%s w/ additional args:\n%s" %(name, self.host, self.port, arguments)
+            print "PID %s serving %s at %s:%s w/ additional args:\n%s" %(pid, name, self.host, self.port, arguments)
 
     @cm
     def run(self, app):

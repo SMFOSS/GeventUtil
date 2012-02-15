@@ -1,14 +1,20 @@
 from setuptools import setup
 from setuptools import find_packages
 
+requires = [
+    "PasteDeploy",
+    "gevent",
+    "gservice",
+    "path.py"
+    ]
+
 version = '0.1.1'
 
 setup(name='GeventUtil',
       version=version,
       description="Some helper for working with gevent",
-      long_description="""
-      """,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+      long_description=open('README.rst').read(),
+      classifiers=[], 
       keywords='gevent monkeypatch',
       author='whit',
       author_email='whit at surveymonkey.com',
@@ -17,13 +23,13 @@ setup(name='GeventUtil',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=["gevent"],
+      install_requires=requires,
       entry_points="""
       [console_scripts]
       gex=geventutil.script:main
       
       [paste.server_factory]
-      gevent=monkeylib.servers:gevent_factory
-      main=monkeylib.servers:gevent_factory
+      gevent=geventutil.servers:gevent_factory
+      gsf=geventutil.servers:GeventServerFactory
       """,
       )

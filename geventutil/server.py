@@ -1,6 +1,7 @@
 from gevent import monkey
 monkey.patch_all()
 
+from contextlib import contextmanager as cm
 from gevent import wsgi
 from paste.deploy.converters import asbool
 from webob import Response
@@ -14,7 +15,65 @@ import sys
 sys.setcheckinterval(10000000) # since we don't use threads, internal checks are not required
 
 pid = os.getpid()
-logger = logging.getLogger('monkeylib.servers')
+logger = logging.getLogger(__name__)
+
+
+class GeventServerFactory(object):
+    server_factory = wsgi.WSGIServer
+    def __init__(self, global_conf, host, port, **kwargs):
+        self.global_conf = global_conf
+        self.host = host
+        self.port = port
+        self.original_args = kwargs.copy()
+        self.graceful = asbool(kwargs.pop('graceful', False))
+        self.huptimeout = float(kwargs.pop('huptimeout', 5.5))
+        self.log = kwargs.pop('access_log', 'off')
+        self._server = None
+        self.additional_args = kwargs
+
+    @property
+    def additional_args(self):
+        return self._additional_args
+
+    @additional_args.setter
+    def set_additional_args(self, val):
+        self._original_args = val.copy()
+        bl = val.get('backlog', None)
+        if bl is not None:
+            val['backlog'] = int(val['backlog'])
+
+        spawn = val.get('spawn', None)
+        if spawn is not None:
+            try:
+                val['spawn'] = int(spawn)
+            except ValueError:
+                pass
+
+    def make_server(self, app):
+        server = self.server_factory((self.host, int(self.port)), app, **self.additional_args)
+        if self.log == 'off':
+            server.log = None
+            
+        if self.graceful is True:
+            gevent.signal(signal.SIGHUP, graceful_stop, server=server, huptimeout=self.huptimeout)
+        return server
+
+    def app_name(self, app):
+        return app.__class__.__name__
+
+    def __call__(self, app):
+        with self.run(app):
+            name = self.app_name(app)
+            arguments = "\n".join(["|  %s: %s" % keyval for keyval in self.original_args.items()])
+            print "Serving %s at %s:%s w/ additional args:\n%s" %(name, self.host, self.port, arguments)
+
+    @cm
+    def run(self, app):
+        server = self.make_server(app)
+        try:
+            yield
+        finally:
+            server.serve_forever()
 
 
 def gevent_factory(global_conf, host, port,  **kw):
@@ -23,6 +82,7 @@ def gevent_factory(global_conf, host, port,  **kw):
 
     backlog=None, spawn='default', log='default',
     """
+    origkw = kw.copy()
     bl = kw.get('backlog', None)
     if bl is not None:
         kw['backlog'] = int(kw['backlog'])
@@ -34,7 +94,6 @@ def gevent_factory(global_conf, host, port,  **kw):
         except ValueError:
             pass
 
-    origkw = kw.copy()
     graceful = asbool(kw.pop('graceful', False))
     huptimeout = float(kw.pop('huptimeout', 5.5))
     log = kw.pop('access_log', 'off')
@@ -73,13 +132,14 @@ class Exiting(object):
     """
     Middleware for indicating we are exiting
     """
+    logger = logger
     def __init__(self, app, suffix='pid'):
         self.app = app
         self.exiting = False
         self.suffix = suffix
 
     def __call__(self, environ, start_response):
-        print "Exiting status: %s" %self.exiting
+        self.logger.debug("Exiting status: %s", self.exiting)
         if self.exiting and environ['PATH_INFO'].endswith(self.suffix):
             return Response("EXITING")(environ, start_response)
         return self.app(environ, start_response)

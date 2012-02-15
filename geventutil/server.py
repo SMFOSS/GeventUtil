@@ -24,20 +24,14 @@ class GeventServerFactory(object):
         self.global_conf = global_conf
         self.host = host
         self.port = port
-        self.original_args = kwargs.copy()
         self.graceful = asbool(kwargs.pop('graceful', False))
         self.huptimeout = float(kwargs.pop('huptimeout', 5.5))
         self.log = kwargs.pop('access_log', 'off')
         self._server = None
-        self.additional_args = kwargs
+        self.additional_args = self.prep_args(kwargs)
 
-    @property
-    def additional_args(self):
-        return self._additional_args
-
-    @additional_args.setter
-    def set_additional_args(self, val):
-        self._original_args = val.copy()
+    def prep_args(self, val):
+        self.original_args = val.copy()
         bl = val.get('backlog', None)
         if bl is not None:
             val['backlog'] = int(val['backlog'])
@@ -48,6 +42,7 @@ class GeventServerFactory(object):
                 val['spawn'] = int(spawn)
             except ValueError:
                 pass
+        return val
 
     def make_server(self, app):
         server = self.server_factory((self.host, int(self.port)), app, **self.additional_args)
@@ -59,7 +54,12 @@ class GeventServerFactory(object):
         return server
 
     def app_name(self, app):
-        return app.__class__.__name__
+        name = getattr(app, '__name__', None)
+        klass = getattr(app, '__class__', None)
+        if name is None:
+            return klass.__name__
+        return name
+
 
     def __call__(self, app):
         with self.run(app):
@@ -76,40 +76,40 @@ class GeventServerFactory(object):
             server.serve_forever()
 
 
-def gevent_factory(global_conf, host, port,  **kw):
-    """
-    Paste factory for gevent
+# def gevent_factory(global_conf, host, port,  **kw):
+#     """
+#     Paste factory for gevent
 
-    backlog=None, spawn='default', log='default',
-    """
-    origkw = kw.copy()
-    bl = kw.get('backlog', None)
-    if bl is not None:
-        kw['backlog'] = int(kw['backlog'])
+#     backlog=None, spawn='default', log='default',
+#     """
+#     origkw = kw.copy()
+#     bl = kw.get('backlog', None)
+#     if bl is not None:
+#         kw['backlog'] = int(kw['backlog'])
 
-    spawn = kw.get('spawn', None)
-    if spawn is not None:
-        try:
-            kw['spawn'] = int(spawn)
-        except ValueError:
-            pass
+#     spawn = kw.get('spawn', None)
+#     if spawn is not None:
+#         try:
+#             kw['spawn'] = int(spawn)
+#         except ValueError:
+#             pass
 
-    graceful = asbool(kw.pop('graceful', False))
-    huptimeout = float(kw.pop('huptimeout', 5.5))
-    log = kw.pop('access_log', 'off')
+#     graceful = asbool(kw.pop('graceful', False))
+#     huptimeout = float(kw.pop('huptimeout', 5.5))
+#     log = kw.pop('access_log', 'off')
 
-    def run(app):
-        server = wsgi.WSGIServer((host, int(port)), app, **kw)
-        if log == 'off':
-            server.log = None
+#     def run(app):
+#         server = wsgi.WSGIServer((host, int(port)), app, **kw)
+#         if log == 'off':
+#             server.log = None
             
-        if graceful is True:
-            gevent.signal(signal.SIGHUP, graceful_stop, server=server, huptimeout=huptimeout)
+#         if graceful is True:
+#             gevent.signal(signal.SIGHUP, graceful_stop, server=server, huptimeout=huptimeout)
 
-        print "Serving %s at %s:%s w/ additional args:\n%s" %(app.__class__.__name__, host, port, "\n".join(["|  %s: %s" % keyval for keyval in origkw.items()]))
-        server.serve_forever()
+#         print "Serving %s at %s:%s w/ additional args:\n%s" %(app.__class__.__name__, host, port, "\n".join(["|  %s: %s" % keyval for keyval in origkw.items()]))
+#         server.serve_forever()
 
-    return run
+#     return run
 
 
 def graceful_stop(server=None, huptimeout=None):
@@ -131,6 +131,8 @@ def graceful_stop(server=None, huptimeout=None):
 class Exiting(object):
     """
     Middleware for indicating we are exiting
+
+    - Must be outer most middleware
     """
     logger = logger
     def __init__(self, app, suffix='pid'):

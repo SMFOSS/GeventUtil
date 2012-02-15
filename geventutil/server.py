@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 class GeventServerFactory(object):
     server_factory = wsgi.WSGIServer
     def __init__(self, global_conf, host, port, **kwargs):
+        self.original_args = kwargs.copy()
         self.global_conf = global_conf
         self.host = host
         self.port = port
@@ -31,7 +32,6 @@ class GeventServerFactory(object):
         self.additional_args = self.prep_args(kwargs)
 
     def prep_args(self, val):
-        self.original_args = val.copy()
         bl = val.get('backlog', None)
         if bl is not None:
             val['backlog'] = int(val['backlog'])
@@ -54,8 +54,11 @@ class GeventServerFactory(object):
         return server
 
     def app_name(self, app):
+        appname = getattr(app, '__app_name__', None)
         name = getattr(app, '__name__', None)
         klass = getattr(app, '__class__', None)
+        if not appname is None:
+            return appname
         if name is None:
             return klass.__name__
         return name
@@ -64,8 +67,15 @@ class GeventServerFactory(object):
     def __call__(self, app):
         with self.run(app):
             name = self.app_name(app)
-            arguments = "\n".join(["|  %s: %s" % keyval for keyval in self.original_args.items()])
-            print "PID %s serving %s at %s:%s w/ additional args:\n%s" %(pid, name, self.host, self.port, arguments)
+            arguments = "\n".join(["|  %s: %s" % keyval \
+                                       for keyval in self.original_args.items()])
+            msg = "PID %s serving '%s' at %s:%s w/ additional args:\n%s"\
+                %(pid, name, self.host, self.port, arguments)
+            rule = "---"
+            print
+            print rule
+            print msg.strip()
+            print rule
 
     @cm
     def run(self, app):
@@ -74,42 +84,6 @@ class GeventServerFactory(object):
             yield
         finally:
             server.serve_forever()
-
-
-# def gevent_factory(global_conf, host, port,  **kw):
-#     """
-#     Paste factory for gevent
-
-#     backlog=None, spawn='default', log='default',
-#     """
-#     origkw = kw.copy()
-#     bl = kw.get('backlog', None)
-#     if bl is not None:
-#         kw['backlog'] = int(kw['backlog'])
-
-#     spawn = kw.get('spawn', None)
-#     if spawn is not None:
-#         try:
-#             kw['spawn'] = int(spawn)
-#         except ValueError:
-#             pass
-
-#     graceful = asbool(kw.pop('graceful', False))
-#     huptimeout = float(kw.pop('huptimeout', 5.5))
-#     log = kw.pop('access_log', 'off')
-
-#     def run(app):
-#         server = wsgi.WSGIServer((host, int(port)), app, **kw)
-#         if log == 'off':
-#             server.log = None
-            
-#         if graceful is True:
-#             gevent.signal(signal.SIGHUP, graceful_stop, server=server, huptimeout=huptimeout)
-
-#         print "Serving %s at %s:%s w/ additional args:\n%s" %(app.__class__.__name__, host, port, "\n".join(["|  %s: %s" % keyval for keyval in origkw.items()]))
-#         server.serve_forever()
-
-#     return run
 
 
 def graceful_stop(server=None, huptimeout=None):

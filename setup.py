@@ -29,9 +29,9 @@ setup(name='GeventUtil',
       gex=geventutil.script:main
       
       [paste.server_factory]
-      main=geventutil.servers:GeventServerFactory
+      main=geventutil.server:GeventServerFactory
 
       [paste.filter_app_factory]
-      exiting=geventutil.servers:make_exiting
+      exiting=geventutil.server:make_exiting
       """,
       )

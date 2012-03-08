@@ -4,7 +4,6 @@ from setuptools import find_packages
 requires = [
     "PasteDeploy",
     "gevent",
-    "gservice",
     "path.py"
     ]
 

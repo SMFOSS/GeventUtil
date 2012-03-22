@@ -73,7 +73,7 @@ class GeventServerFactory(object):
                                            for keyval in self.original_args.items()])
             msg = "Serving '%s' at %s:%s" %(name, self.host, self.port)
             if not arguments is None: 
-                msg = msg + "w/ additional args:\n%s" %arguments
+                msg = msg + " w/ additional args:\n%s" %arguments
             rule = "------"
             print msg.strip()
             print rule
